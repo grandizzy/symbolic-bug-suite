@@ -6,8 +6,8 @@ cannot do, by reproducing the shape of real historical DeFi exploits
 under `forge test --symbolic`.
 
 Each test is written so that **engine success = test FAILURE with a
-concrete attacker witness**. 36 tests covering 14 distinct engine
-primitives across incidents from 2016 to 2025; all 36 currently fail
+concrete attacker witness**. 35 tests covering 14 distinct engine
+primitives across incidents from 2016 to 2025; all 35 currently fail
 (= caught).
 
 ```bash
@@ -81,7 +81,6 @@ Each case is tagged on how close the reproducer is to what shipped.
 | 26 | Punk | F | Bare `__init` reproduces the public-initializer bug. |
 | 27 | King of the Ether | F | Royalty `transfer` to a contract that reverts is the real bug. |
 | 28 | PolyNetwork | S | Single dispatch contract; real exploit used a full crafted cross-chain message. |
-| 29 | Fei / Rari | S | Bare cToken; real exploit required Fuse comptroller path. |
 | 30 | The DAO | F | The 2016 reentrancy shape, almost line-for-line. |
 | 31 | Lendf.Me | L | Reordered deposit operations so the engine can surface the hook-reentry; real bug was specific to ERC-777 transfer hook semantics. |
 | 32 | Furucombo | S | Same primitive as 16. |
@@ -90,7 +89,7 @@ Each case is tagged on how close the reproducer is to what shipped.
 | 35 | Predy | S | Same primitive as 02 with callback flavor. |
 | 36 | Nexera | S | Same primitive as 16. |
 
-Counts: **13 Faithful · 15 Simplified · 8 Loose** (of 36).
+Counts: **13 Faithful · 14 Simplified · 8 Loose** (of 35).
 
 The strongest "would have caught a real bug" claims come from the
 Faithful entries. Simplified entries are credible at the class level
