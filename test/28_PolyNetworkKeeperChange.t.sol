@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {PolyLike} from "../src/28_PolyNetworkKeeperChange.sol";
 
-contract PolyNetworkKeeperChangeTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract PolyNetworkKeeperChangeTest is Test {
     function checkKeeperOnlyChangeableByItself(address attacker) public {
         address legit = address(0xC0DE);
         PolyLike p = new PolyLike(legit);

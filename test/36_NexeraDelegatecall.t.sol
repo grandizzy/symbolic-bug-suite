@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {NexeraLike} from "../src/36_NexeraDelegatecall.sol";
 
 contract AdminSwapper {
@@ -11,9 +11,7 @@ contract AdminSwapper {
     }
 }
 
-contract NexeraDelegatecallTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract NexeraDelegatecallTest is Test {
     function checkUpgradeRestrictedToAdmin(address attacker) public {
         address legit = address(0xC0DE);
         NexeraLike n = new NexeraLike(legit);

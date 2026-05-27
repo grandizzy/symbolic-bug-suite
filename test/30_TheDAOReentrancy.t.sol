@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {DAOLike} from "../src/30_TheDAOReentrancy.sol";
 
 contract DAOAttacker {
@@ -25,9 +25,7 @@ contract DAOAttacker {
     }
 }
 
-contract TheDAOReentrancyTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract TheDAOReentrancyTest is Test {
     function checkWithdrawCannotBeReentered(uint256 attackerDeposit) public payable {
         if (attackerDeposit == 0 || attackerDeposit > 50 ether) return;
         vm.deal(address(this), 1000 ether);

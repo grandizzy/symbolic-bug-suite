@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Test} from "forge-std/Test.sol";
 import {MonoXLike} from "../src/23_MonoXSameToken.sol";
 
-contract MonoXSameTokenTest {
+contract MonoXSameTokenTest is Test {
     function checkSwapOutputCannotExceedInputForSelfSwap(uint256 amountIn) public {
         if (amountIn == 0 || amountIn > 1_000) return;
 

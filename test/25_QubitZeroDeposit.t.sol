@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Test} from "forge-std/Test.sol";
 import {QubitLike} from "../src/25_QubitZeroDeposit.sol";
 
-contract QubitZeroDepositTest {
+contract QubitZeroDepositTest is Test {
     function checkNativeDepositRequiresMsgValue(uint256 amount) public {
         if (amount == 0 || amount > 1e30) return;
 

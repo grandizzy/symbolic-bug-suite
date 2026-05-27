@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {PenpieLike, IMarketCallback} from "../src/09_PenpieReentrancy.sol";
 
 contract MaliciousMarket is IMarketCallback {
@@ -24,9 +24,7 @@ contract MaliciousMarket is IMarketCallback {
     }
 }
 
-contract PenpieReentrancyTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract PenpieReentrancyTest is Test {
     function checkHarvestCannotBeReplayed(uint256 reward) public {
         if (reward == 0 || reward > 1e30) return;
 

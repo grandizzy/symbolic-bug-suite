@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {PunkLike} from "../src/26_PunkInitializer.sol";
 
-contract PunkInitializerTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract PunkInitializerTest is Test {
     function checkInitNotRecallable(address attacker, address attackerOwner) public {
         address legit = address(0xC0DE);
         PunkLike p = new PunkLike();

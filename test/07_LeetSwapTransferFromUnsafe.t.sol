@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {LeetTokenLike} from "../src/07_LeetSwapTransferFromUnsafe.sol";
 
-contract LeetSwapTransferFromUnsafeTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract LeetSwapTransferFromUnsafeTest is Test {
     function checkVictimBalanceNotStealableByThirdParty(address attacker, uint256 amount) public {
         if (amount == 0 || amount > 1e30) return;
 

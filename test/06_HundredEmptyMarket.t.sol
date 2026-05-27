@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {VaultLike} from "../src/06_HundredEmptyMarket.sol";
 
-contract HundredEmptyMarketTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract HundredEmptyMarketTest is Test {
     function checkVictimDepositMintsAtLeastOneShare(uint256 victimDeposit) public {
         // Bounded to keep the SMT instance tractable; the bug appears at any
         // deposit smaller than the donated amount.

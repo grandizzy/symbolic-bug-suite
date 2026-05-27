@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {AuctionLike} from "../src/18_AkutarRevertLoop.sol";
 
 /// A contract whose `receive` always reverts — models a malicious bidder.
@@ -11,9 +11,7 @@ contract RevertingBidder {
     }
 }
 
-contract AkutarRevertLoopTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract AkutarRevertLoopTest is Test {
     function checkRefundLoopReachesCompletion(bool includeReverter) public payable {
         vm.deal(address(this), 1000 ether);
 

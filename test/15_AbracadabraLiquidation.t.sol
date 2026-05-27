@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Test} from "forge-std/Test.sol";
 import {CauldronLike} from "../src/15_AbracadabraLiquidation.sol";
 
-contract AbracadabraLiquidationTest {
+contract AbracadabraLiquidationTest is Test {
     function checkLiquidationClearsAtMostRepay(uint256 repay) public {
         // Concrete unhealthy position; only repay amount is symbolic.
         uint256 startCollateral = 50;

@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {PolterVaultLike} from "../src/21_PolterEmptyMarket.sol";
 
-contract PolterEmptyMarketTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract PolterEmptyMarketTest is Test {
     function checkVictimDepositMintsAtLeastOneSharePolter(uint256 victimDeposit) public {
         if (victimDeposit == 0 || victimDeposit > 2_000) return;
 

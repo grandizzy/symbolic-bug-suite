@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {KiloExLike} from "../src/13_KiloExSetPrices.sol";
 
-contract KiloExSetPricesTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract KiloExSetPricesTest is Test {
     function checkOnlyKeeperCanWritePrice(address attacker, uint256 productId, uint256 attackerPrice)
         public
     {

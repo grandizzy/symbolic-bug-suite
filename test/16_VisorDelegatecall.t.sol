@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {VisorLike} from "../src/16_VisorDelegatecall.sol";
 
 /// Attacker contract whose storage layout matches the first slot of VisorLike
@@ -15,9 +15,7 @@ contract Stealer {
     }
 }
 
-contract VisorDelegatecallTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract VisorDelegatecallTest is Test {
     function checkOwnerCannotBeStolenViaRegistry(address attacker) public {
         VisorLike v = new VisorLike();
         Stealer s = new Stealer();

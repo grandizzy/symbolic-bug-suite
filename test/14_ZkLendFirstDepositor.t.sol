@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Test} from "forge-std/Test.sol";
 import {ZkLendVaultLike} from "../src/14_ZkLendFirstDepositor.sol";
 
-contract ZkLendFirstDepositorTest {
+contract ZkLendFirstDepositorTest is Test {
     function checkRedeemNeverYieldsMoreThanFair(uint256 deposit) public {
         if (deposit == 0 || deposit > 1_000) return;
 

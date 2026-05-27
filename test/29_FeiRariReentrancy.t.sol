@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {FuseCTokenLike, IToken} from "../src/29_FeiRariReentrancy.sol";
 
 contract ReenterToken is IToken {
@@ -23,9 +23,7 @@ contract ReenterToken is IToken {
     }
 }
 
-contract FeiRariReentrancyTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract FeiRariReentrancyTest is Test {
     function checkBorrowAccountingNotBypassable(bool dummy) public payable {
         dummy;
         vm.deal(address(this), 1000 ether);

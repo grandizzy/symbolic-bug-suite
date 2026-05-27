@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {HedgeyLike} from "../src/08_HedgeyArbitraryToken.sol";
 
-contract HedgeyArbitraryTokenTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract HedgeyArbitraryTokenTest is Test {
     function checkOnlyPlanOwnerCanRedeem(address attacker) public payable {
         uint256 amount = 1 ether;
         vm.deal(address(this), 1000 ether);

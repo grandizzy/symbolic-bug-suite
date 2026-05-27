@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {ParityWalletLike} from "../src/02_ParityInitWallet.sol";
 
-contract ParityInitWalletTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract ParityInitWalletTest is Test {
     function checkOwnerOnlyChangedByOwner(address attacker, address newOwner) public {
         ParityWalletLike w = new ParityWalletLike();
         // Legitimate setup: contract deployer takes ownership.

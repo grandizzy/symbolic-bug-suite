@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {EulerLike} from "../src/04_EulerDonation.sol";
 
-contract EulerDonationTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract EulerDonationTest is Test {
     function checkDonationDoesNotEnableProfit(uint256 donate) public {
         // Hold setup concrete; only the attacker-controlled `donate` is symbolic.
         // The historical exploit shape: make oneself unhealthy then have a

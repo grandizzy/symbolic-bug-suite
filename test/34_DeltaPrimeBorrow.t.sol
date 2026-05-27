@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {DeltaPrimeLike} from "../src/34_DeltaPrimeBorrow.sol";
 
-contract DeltaPrimeBorrowTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract DeltaPrimeBorrowTest is Test {
     function checkBorrowOnlyByOwner(address attacker, uint256 amount) public {
         if (amount == 0 || amount > 1e30) return;
 

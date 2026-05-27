@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {LendfMeLike, ITokenReceiver} from "../src/31_LendfMeERC777.sol";
 
 contract ERC777Attacker is ITokenReceiver {
@@ -23,9 +23,7 @@ contract ERC777Attacker is ITokenReceiver {
     }
 }
 
-contract LendfMeERC777Test {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract LendfMeERC777Test is Test {
     function checkCollateralCreditedBeforeAnyBorrow(uint256 amount) public {
         if (amount == 0 || amount > 1e30) return;
 

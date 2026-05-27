@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {DODOLike} from "../src/24_DODOReInit.sol";
 
-contract DODOReInitTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract DODOReInitTest is Test {
     function checkInitOnlyOnce(address attacker, address attackerAdmin) public {
         address legit = address(0xC0DE);
         DODOLike d = new DODOLike();

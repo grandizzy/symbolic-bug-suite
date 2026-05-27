@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {HolographLike} from "../src/11_HolographMissingOp.sol";
 
-contract HolographMissingOpTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract HolographMissingOpTest is Test {
     function checkOnlyOperatorCanMint(address attacker, uint256 amount) public {
         if (amount == 0 || amount > 1e30) return;
 

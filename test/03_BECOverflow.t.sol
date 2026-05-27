@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Test} from "forge-std/Test.sol";
 import {BECLike} from "../src/03_BECOverflow.sol";
 
-contract BECOverflowTest {
+contract BECOverflowTest is Test {
     function checkAttackerWithoutBalanceCannotMint(uint256 value, address r1, address r2) public {
         // Attacker (this) starts with zero balance.
         BECLike t = new BECLike(address(0xdead), type(uint256).max);

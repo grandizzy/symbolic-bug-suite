@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Test} from "forge-std/Test.sol";
 import {VelocoreLike} from "../src/10_VelocoreUnderflow.sol";
 
-contract VelocoreUnderflowTest {
+contract VelocoreUnderflowTest is Test {
     function checkFeeRebateCannotExceedAmount(uint256 amount, uint256 feeMultiplier) public {
         if (amount > 1e18) return;
 

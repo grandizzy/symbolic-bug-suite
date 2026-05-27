@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {Test} from "forge-std/Test.sol";
 import {IndexedLike} from "../src/33_IndexedReweight.sol";
 
-contract IndexedReweightTest {
+contract IndexedReweightTest is Test {
     function checkReweightCannotZeroWeight(uint256 delta) public {
         if (delta == 0 || delta > 100) return;
 

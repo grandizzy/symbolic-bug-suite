@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {FurucomboLike} from "../src/32_FurucomboDelegatecall.sol";
 
 contract HandlerStealer {
@@ -11,9 +11,7 @@ contract HandlerStealer {
     }
 }
 
-contract FurucomboDelegatecallTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract FurucomboDelegatecallTest is Test {
     function checkHandlerNotHijackable(address attacker) public {
         FurucomboLike proxy = new FurucomboLike();
         HandlerStealer s = new HandlerStealer();

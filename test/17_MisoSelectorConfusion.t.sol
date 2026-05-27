@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {MisoLike} from "../src/17_MisoSelectorConfusion.sol";
 
-contract MisoSelectorConfusionTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract MisoSelectorConfusionTest is Test {
     function checkCreditNeverExceedsMsgValue(bool useMulticall) public payable {
         vm.deal(address(this), 1000 ether);
         MisoLike a = new MisoLike();

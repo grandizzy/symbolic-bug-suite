@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {MunchablesLike} from "../src/12_MunchablesUpgrader.sol";
 
-contract MunchablesUpgraderTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract MunchablesUpgraderTest is Test {
     function checkInitializeIsOneShot(address attacker, address attackerImpl) public {
         address legitOwner = address(0xC0DE);
         MunchablesLike m = new MunchablesLike();

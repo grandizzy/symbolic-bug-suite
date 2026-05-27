@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {OnyxVaultLike} from "../src/20_OnyxEmptyMarket.sol";
 
-contract OnyxEmptyMarketTest {
-    Vm constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-
+contract OnyxEmptyMarketTest is Test {
     function checkVictimDepositMintsAtLeastOneShareOnyx(uint256 victimDeposit) public {
         if (victimDeposit == 0 || victimDeposit > 2_000) return;
 
