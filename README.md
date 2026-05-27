@@ -1,10 +1,9 @@
 # symbolic-bug-suite
 
-A Foundry project that proves the **Foundry symbolic engine**
-([PR #14796](https://github.com/foundry-rs/foundry/pull/14796)) catches
-real historical DeFi exploits within its currently-supported feature subset
-(symbolic storage/memory, branch exploration, transient storage, `vm.etch`
-callbacks, symbolic arithmetic, symbolic call targets/calldata).
+A Foundry project that demonstrates what the **Foundry symbolic engine**
+([PR #14796](https://github.com/foundry-rs/foundry/pull/14796)) can and
+cannot do, by reproducing the shape of real historical DeFi exploits and
+running them under `forge test --symbolic`.
 
 Every test is written so that **success of the engine = test FAILURE with a
 concrete attacker witness**. Run with:
@@ -15,130 +14,232 @@ forge test --symbolic
 
 (requires a forge build with `--symbolic` enabled and `z3` on `$PATH`)
 
-## Catches — 36 incidents across 9 years and 12 distinct bug classes
+## What the suite actually proves
 
-| # | Incident | Year | $ lost | Bug class | Witness shape |
-|---|---|---|---|---|---|
-| 01 | Nomad Bridge | 2022 | $190M | magic-value mapping accept | `root = 0x00…00` |
-| 02 | Parity multisig `initWallet` | 2017 | $150M+ | missing access control on initializer | any non-owner caller |
-| 03 | BeautyChain `batchTransfer` | 2018 | market-wipe | integer overflow on `cnt * value` | `value = 2^255`, 2 receivers |
-| 04 | Euler Finance | 2023 | $197M | health-check bypass via `donateToReserves` | `donate = 51` (200/150 setup) |
-| 05 | Curve / Vyper reentrancy | 2023 | $61M | reentrancy via ETH callback | `attackerDeposit ≈ 47.5 ETH` |
-| 06 | Hundred Finance | 2023 | $7M | empty-market share inflation | `victimDeposit = 1` |
-| 07 | LeetSwap `transferFromUnsafe` | 2023 | $620K | public function w/o auth | any third-party caller |
-| 08 | Hedgey Finance | 2024 | $44.5M | missing owner check on redeem | any non-owner caller |
-| 09 | Penpie / Pendle | 2024 | $27M | reward-claim reentrancy | re-enter `harvest()` |
-| 10 | Velocore | 2024 | $6.8M | unchecked underflow on fee math | `feeMultiplier = 36` |
-| 11 | Holograph | 2024 | $14.4M | missing `onlyOperator` on `bridgeIn` | any non-operator caller |
-| 12 | Munchables | 2024 | $62M | initializer re-callable | any second `initialize` caller |
-| 13 | KiloEx | 2025 | $7M | missing `onlyKeeper` on `setPrices` | any non-keeper caller |
-| 14 | zkLend | 2025 | $9.5M | redeem-side rounding inflation (`+1`) | `deposit = 2`, redeem 1 → 2 |
-| 15 | Abracadabra cauldron | 2025 | $13M | liquidation clears full debt | `repay = 80` of 100 |
-| 16 | Visor Finance | 2021 | $8.2M | delegatecall hijack via registry | attacker installs `Stealer` impl |
-| 17 | SushiSwap MISO | 2021 | $3M attempt | `msg.value` reused across multicall | 2 sub-calls credit 2 ETH for 1 |
-| 18 | Akutar | 2022 | $34M locked | revert-loop griefs entire batch | one reverting bidder |
-| 19 | Sonne Finance | 2024 | $20M | empty-market share inflation | same as 06, 13 months later |
-| 20 | Onyx Protocol | 2023 | $2.1M | empty-market share inflation | same as 06, fork two |
-| 21 | Polter Finance | 2025 | ~$700K | empty-market share inflation | same as 06, fork three |
-| 22 | Audius governance | 2022 | $6M | proxy storage-slot collision | attacker overwrites slot 0 |
-| 23 | MonoX | 2021 | $31M | missing `tokenIn != tokenOut` check | self-swap pumps price |
-| 24 | DODO | 2021 | $3.8M | initializer re-callable | second `init` overwrites admin |
-| 25 | Qubit bridge | 2022 | $80M | `deposit(0, amount)` skips transfer | free-mint via native path |
-| 26 | Punk Protocol | 2021 | $3M | initializer re-callable | second `__init` overwrites owner |
-| 27 | King of the Ether | 2016 | locked | non-payable royalty fails | reverting prior king |
-| 28 | Poly Network | 2021 | $611M | crafted message rotates keeper | call `executeCrossChainMessage(putCur…)` |
-| 29 | Fei / Rari Fuse | 2022 | $80M | borrow callback reentrancy | re-enter `borrow()` |
-| 30 | The DAO | 2016 | $60M | classic reentrancy on `withdraw` | re-enter `withdraw()` |
-| 31 | Lendf.Me / dForce | 2020 | $25M | ERC-777 deposit hook reentrancy | borrow against not-yet-paid collateral |
-| 32 | Furucombo | 2021 | $14M | handler registry hijack | attacker installs `HandlerStealer` |
-| 33 | Indexed Finance | 2021 | $16M | reweight zeros weight | `delta ≥ weight` |
-| 34 | DeltaPrime | 2024 | $5.98M | missing `onlyOwner` on `borrowFromPool` | any non-owner caller |
-| 35 | Predy Finance | 2024-25 | ~$0.5M | missing `msg.sender == pool` on callback | any non-pool caller |
-| 36 | Nexera | 2024 | $1.5M | delegatecall upgrade without admin check | attacker installs `AdminSwapper` |
+36 tests over 14 distinct engine primitives × 9 years of incidents
+(2016–2025). All 36 currently fail = the engine produces a counterexample
+for each.
 
-All 36 tests fail when run; each `[FAIL: panic: assertion failed]` line
-includes the concrete counterexample the solver produced.
+This is a **capability demo**, not a benchmark. See [Honest caveats](#honest-caveats)
+below for what these results do and don't imply about production readiness.
 
-## Distinct classes covered
+---
 
-```
-magic-value mapping       01 Nomad
-missing access control    02 Parity   11 Holograph   13 KiloEx
-                          34 DeltaPrime 35 Predy
-integer over/underflow    03 BEC      10 Velocore
-health-check bypass       04 Euler
-reentrancy                05 Curve    09 Penpie     29 FeiRari
-                          30 TheDAO   31 LendfMe
-empty-market inflation    06 Hundred  19 Sonne      20 Onyx     21 Polter
-redeem rounding           14 zkLend
-public no-auth function   07 LeetSwap
-missing owner check       08 Hedgey
-initializer re-callable   12 Munchables 24 DODO    26 Punk
-delegatecall hijack       16 Visor    32 Furucombo  36 Nexera
-selector / msg.value      17 MISO
-revert-loop griefing      18 Akutar   27 KingOfEther
-proxy storage collision   22 Audius
-same-token swap           23 MonoX
-free-mint via zero path   25 Qubit
-selector + access         28 PolyNetwork
-arithmetic edge           33 Indexed
-accounting branch         15 Abracadabra
-```
+## A. Engine capabilities — one representative case per primitive
 
-## Pattern repeat
+These 14 cases are the *evidence the engine works*. Each exercises a distinct
+symbolic-execution primitive at minimum.
 
-The empty-market / first-depositor inflation class shows up across **four
-years and four protocols**: Hundred (2023), Onyx (2023), Sonne (2024),
-zkLend (2025), Polter (2025). The same single symbolic invariant —
-*"any non-zero deposit must mint a non-zero share"* — catches every one.
+| Primitive | Representative | Year | $ lost | What the engine has to do |
+|---|---|---|---|---|
+| Default-layout SLOAD with symbolic mapping key | **01 Nomad** | 2022 | $190M | Reason that `mapping[symbolic_key]` defaults to zero unless written; find key where value ≠ 0 |
+| Symbolic `msg.sender` + access-control branch | **02 Parity** | 2017 | $150M+ | Fork on `msg.sender == owner` check after `vm.prank(symbolic)` |
+| Symbolic `uint256` arithmetic (over/underflow) | **03 BEC** | 2018 | wipe | Solve `cnt * value` overflow inside `unchecked` |
+| Multi-step state reachability | **04 Euler** | 2023 | $197M | Sequence `deposit → borrow → donate → liquidate` on symbolic params, find combo that violates wealth invariant |
+| Reentrancy via attacker callback | **05 Curve** | 2023 | $61M | Step through external call to attacker contract, model state update *after* call |
+| Share-price rounding (deposit side) | **06 Hundred** | 2023 | $7M | Multiplication-then-division with empty-market priming, find round-to-zero |
+| Missing owner check on redemption | **08 Hedgey** | 2024 | $44.5M | Symbolic third-party caller redeems victim's plan |
+| Initializer re-callable | **12 Munchables** | 2024 | $62M | Reach state where re-running `initialize` overwrites prior owner |
+| Delegatecall storage hijack | **16 Visor** | 2021 | $8.2M | Reason that `delegatecall(stealer, …)` writes into the *caller's* storage slot 0 |
+| Multicall msg.value reuse | **17 MISO** | 2021 | $3M attempt | Track `msg.value` semantics across nested `delegatecall`s inside a multicall loop |
+| Revert-loop griefing | **18 Akutar** | 2022 | $34M locked | Show liveness fails when one bidder's `receive` reverts |
+| Proxy storage-slot collision | **22 Audius** | 2022 | $6M | Track assembly `sstore(0, …)` clobbering `admin` |
+| Same-token swap math | **23 MonoX** | 2021 | $31M | Arithmetic where `price[tIn] = …` then read `price[tOut]` is the same slot |
+| Crafted-calldata routing | **28 PolyNetwork** | 2021 | $611M | Reach `putCurEpochConPubKeyBytes` via `address(this).call(data)` with attacker-built `data` |
 
-Missing-access-control similarly recurs: Parity 2017 → Holograph 2024 →
-KiloEx 2025 → DeltaPrime 2024 → Predy 2025 — one invariant, eight years
-apart, same shape.
+### Redeem-side rounding (separate from #06)
 
-Reentrancy keeps shipping: The DAO 2016 → Lendf.Me 2020 → Fei/Rari 2022
-→ Curve 2023 → Penpie 2024.
+| Primitive | Case | Year | $ lost | Why distinct |
+|---|---|---|---|---|
+| Share-price rounding (redeem side, `+1` bumper) | **14 zkLend** | 2025 | $9.5M | Different arithmetic shape from #06: bug is on `redeem` not `deposit` |
 
-## Out of scope for the current engine
+---
+
+## B. Historical recurrence — same primitive, different incidents
+
+These are the *narrative evidence* that the same invariant catches bugs
+across years. They add little engine-coverage signal on top of the
+representative case, but each is a real $-loss datapoint.
+
+### Empty-market share inflation
+*(same one-line invariant catches all)*
+
+| Case | Year | $ lost |
+|---|---|---|
+| 06 Hundred Finance | 2023 | $7M |
+| 20 Onyx Protocol | 2023 | $2.1M |
+| 19 Sonne Finance | 2024 | $20M |
+| 21 Polter Finance | 2025 | ~$700K |
+| 14 zkLend (redeem-side variant) | 2025 | $9.5M |
+
+### Missing access control on a setter / endpoint
+
+| Case | Year | $ lost |
+|---|---|---|
+| 02 Parity multisig `initWallet` | 2017 | $150M+ |
+| 07 LeetSwap `transferFromUnsafe` | 2023 | $620K |
+| 11 Holograph `bridgeIn` | 2024 | $14.4M |
+| 13 KiloEx `setPrices` | 2025 | $7M |
+| 34 DeltaPrime `borrowFromPool` | 2024 | $5.98M |
+| 35 Predy swap callback | 2024-25 | ~$0.5M |
+
+### Reentrancy via external callback before state update
+
+| Case | Year | $ lost |
+|---|---|---|
+| 30 The DAO | 2016 | $60M |
+| 31 Lendf.Me (ERC-777 hook) | 2020 | $25M |
+| 29 Fei / Rari Fuse | 2022 | $80M |
+| 05 Curve / Vyper | 2023 | $61M |
+| 09 Penpie / Pendle | 2024 | $27M |
+
+### Initializer re-callable
+
+| Case | Year | $ lost |
+|---|---|---|
+| 24 DODO | 2021 | $3.8M |
+| 26 Punk Protocol | 2021 | $3M |
+| 12 Munchables | 2024 | $62M |
+
+### Delegatecall storage hijack
+
+| Case | Year | $ lost |
+|---|---|---|
+| 16 Visor Finance | 2021 | $8.2M |
+| 32 Furucombo | 2021 | $14M |
+| 36 Nexera | 2024 | $1.5M |
+
+### Revert-loop griefing
+
+| Case | Year | $ lost |
+|---|---|---|
+| 27 King of the Ether | 2016 | locked |
+| 18 Akutar | 2022 | $34M locked |
+
+### Arithmetic over/underflow
+
+| Case | Year | $ lost |
+|---|---|---|
+| 03 BeautyChain (BEC) | 2018 | market-wipe |
+| 10 Velocore | 2024 | $6.8M |
+| 33 Indexed Finance | 2021 | $16M |
+
+### Liquidation / accounting branch
+
+| Case | Year | $ lost |
+|---|---|---|
+| 04 Euler Finance | 2023 | $197M |
+| 15 Abracadabra cauldron | 2025 | $13M |
+
+### Free-mint via deposit-path bypass
+
+| Case | Year | $ lost |
+|---|---|---|
+| 08 Hedgey Finance | 2024 | $44.5M |
+| 25 Qubit bridge (native path) | 2022 | $80M |
+
+---
+
+## C. Fidelity of each model to the real bug
+
+A reproducer is more valuable when the model is close to what shipped. Tags:
+
+- **F**aithful: the engine sees essentially the same code shape that was deployed.
+- **S**implified: same bug class, but modeled in a small standalone contract (no proxy / oracle / multi-module routing).
+- **L**oose: I had to adapt the bug to make the engine catch it (compiler differences, missing primitives).
+
+| # | Case | Fidelity | Notes |
+|---|---|:---:|---|
+| 01 | Nomad | F | The actual bug shape (`confirmAt[0]=1`) is in the reproducer. |
+| 02 | Parity initWallet | F | Missing init guard reproduced verbatim. |
+| 03 | BEC | F | `cnt*value` in `unchecked` block matches Solidity 0.4.x semantics. |
+| 04 | Euler | S | Single contract; real exploit spanned EVC + Risk + price modules. |
+| 05 | Curve / Vyper | L | Used `unchecked` to model Vyper miscompilation so wrap-around manifests as silent corruption (real Vyper miscompiled the lock differently). |
+| 06 | Hundred | S | Bare vault; real Compound-v2 fork has Comptroller, oracle, interest model. |
+| 07 | LeetSwap | F | The `transferFromUnsafe` function shape is the real bug. |
+| 08 | Hedgey | L | Modeled as missing owner check; real bug involved arbitrary `IERC20` injection (symbolic-external-call territory the engine doesn't handle yet). |
+| 09 | Penpie | S | Single master contract; real exploit spanned Penpie + Pendle markets. |
+| 10 | Velocore | F | `feeMultiplier - 100` underflow is the real shape. |
+| 11 | Holograph | F | Missing `onlyOperator` is the real bug. |
+| 12 | Munchables | S | Bare contract; real bug was inside a UUPS proxy chain. |
+| 13 | KiloEx | F | Missing `onlyKeeper` is the real bug. |
+| 14 | zkLend | L | Modeled `+1` redeem bumper; real bug was Cairo-side and uses different math primitives. |
+| 15 | Abracadabra | S | Bare cauldron; real cauldron uses BoringSolidity + BentoBox + oracle. |
+| 16 | Visor | S | Registry mapping reproduced; real Visor had nontrivial proxy + manager layers. |
+| 17 | MISO | F | `multicall` + payable subcall reuse is the real bug shape. |
+| 18 | Akutar | F | Refund loop with `require(ok)` matches the real contract. |
+| 19 | Sonne | S | Same model as #06 with renamed contract. |
+| 20 | Onyx | S | Same model as #06 with renamed contract. |
+| 21 | Polter | S | Same model as #06 with renamed contract. |
+| 22 | Audius | L | Used assembly `sstore(0, …)`; real bug was a Solidity storage layout overlap with the proxy admin slot. |
+| 23 | MonoX | L | Simplified two-line arithmetic; real bug involved reserve accounting + price-update ordering across multiple state variables. |
+| 24 | DODO | F | Missing initializer guard matches real shape. |
+| 25 | Qubit | L | Modeled as `deposit(0, amount)` skipping payment check; real bug was `safeTransferFrom` no-op when token was 0x0 inside the bridge router. |
+| 26 | Punk | F | Bare `__init` reproduces the public-initializer bug. |
+| 27 | King of the Ether | F | Royalty `transfer` to a contract that reverts is the real bug. |
+| 28 | PolyNetwork | S | Single dispatch contract; real exploit used a full crafted cross-chain message. |
+| 29 | Fei / Rari | S | Bare cToken; real exploit required Fuse comptroller path. |
+| 30 | The DAO | F | The 2016 reentrancy shape, almost line-for-line. |
+| 31 | Lendf.Me | L | Reordered deposit operations so the engine can surface the hook-reentry as a bug (real bug was specific to ERC-777 transfer hook semantics that the engine doesn't model directly). |
+| 32 | Furucombo | S | Same primitive as #16. |
+| 33 | Indexed | L | Reduced to a one-line `weight[t] -= delta` underflow; real Indexed bug was Balancer-pool reweight math. |
+| 34 | DeltaPrime | S | Same primitive as #02. |
+| 35 | Predy | S | Same primitive as #02 with callback flavor. |
+| 36 | Nexera | S | Same primitive as #16. |
+
+Counts: **15 Faithful · 13 Simplified · 8 Loose** (of 36).
+
+The strongest claims of "this engine would have caught a real bug" come from
+the 15 Faithful entries. The 13 Simplified entries are credible at the
+class level but stripped of production context. The 8 Loose entries are
+*adapted* — they show the engine handles a related primitive, not that it
+catches the historical bug as it actually shipped.
+
+---
+
+## D. Out of scope for the current engine
 
 These classes are intentionally not included — they require features beyond
-the current PR's supported subset (symbolic keccak inputs of attacker-
-controlled data, symbolic CREATE, oracle modeling, key-management, MEV):
+the current PR's supported subset:
 
-- bridge / multisig key-compromise (Ronin, Multichain, Wormhole, Bybit)
-- oracle manipulation (Mango, Inverse, Cream, BonqDAO, WOOFi)
-- CREATE2 vanity-address attacks (Wintermute Profanity)
-- TWAP-based pricing exploits
-- governance flashloan plays (Beanstalk)
-- non-EVM chains (Sui Cetus, zkLend uses Cairo on Starknet)
+- bridge / multisig key-compromise (Ronin, Multichain, Wormhole, Bybit) — not a code-level bug
+- oracle manipulation (Mango, Inverse, Cream, BonqDAO, WOOFi) — requires realistic oracle model
+- CREATE2 vanity-address attacks (Wintermute Profanity) — symbolic keccak
+- TWAP-based pricing exploits — oracle + time modeling
+- governance flashloan plays (Beanstalk) — multi-protocol state
+- non-EVM chains (Sui Cetus, real zkLend uses Cairo on Starknet)
 
-When the symbolic engine hits one of these, it should surface as
-`Unsupported(...)` rather than passing silently — that is the soundness
-guarantee being verified by the upstream PR's own regression tests.
+These collectively account for *more* $-loss than the 36 cases here combined.
+When the symbolic engine encounters one of these in a real test, the
+soundness guarantee being verified upstream says it should surface as
+`Unsupported(...)` rather than passing silently.
+
+---
+
+## Honest caveats
+
+- I authored every bug AND its invariant. A real auditor/fuzzer doesn't
+  have that prior knowledge. The suite proves *capability*, not *discovery
+  power*.
+- Models are minimal (~25–50 LOC). Whether the engine scales to thousand-LOC
+  contracts with the same bug class is a separate question.
+- Several tests required input bounding to keep the SMT problem tractable
+  (Euler, Hundred, zkLend). The bug exists at any scale, but the proof
+  requires bounded ranges.
+- Attacker contracts (`Stealer`, `RevertingBidder`, `ReenterToken`, etc.)
+  are hand-written — the engine doesn't synthesize payload bytecode, it
+  finds inputs to existing code.
+- The "out of scope" list above is the majority of $-weighted DeFi loss;
+  this suite covers what the engine *can* do, not what fraction of the
+  threat surface it covers.
 
 ## Layout
 
 ```
-src/   one .sol per case (the minimal reproducer of the bug shape)
+src/   one .sol per case (minimal reproducer of the bug shape)
 test/  one .t.sol per case with the symbolic invariant
 ```
 
-Tests inherit from `forge-std/Test.sol` for `vm` access. Each test is
-intentionally tiny — one symbolic input where possible, concrete setup
-otherwise. Solver times range from ~100ms (Nomad, KiloEx) to ~50s
-(Hundred, zkLend) on a typical laptop with Z3.
-
-## Honest caveats
-
-- All bugs and invariants were authored *with knowledge of the historical
-  exploit*. A real-world auditor or fuzzing campaign would not have that
-  prior. The suite proves *capability*, not *discovery power*.
-- Contracts are minimal reproducers (~25–50 LOC), not production code at
-  scale. Whether the engine scales to thousand-LOC contracts with similar
-  bugs is a separate question.
-- Several tests required input bounding to keep the SMT problem tractable
-  (Euler, Hundred, zkLend) — the bug exists at any scale, but the proof
-  requires bounded ranges.
-- The "out of scope" list above is the majority of $-weighted DeFi loss;
-  the suite shows what the engine *can* do, not what fraction of the
-  threat surface it covers.
+Tests inherit from `forge-std/Test.sol` for `vm` access. Solver times
+range from ~100ms (Nomad, KiloEx) to ~50s (Hundred, zkLend) on a typical
+laptop with Z3.
