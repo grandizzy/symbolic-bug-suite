@@ -2,12 +2,12 @@
 
 A Foundry project demonstrating what the **Foundry symbolic engine**
 ([PR #14796](https://github.com/foundry-rs/foundry/pull/14796)) can do
-that a regular unit test cannot — by reproducing the shape of real
-historical DeFi exploits where the engine has to *discover* a specific
-attacker input the solver finds in an otherwise-untestable search space.
+that a regular unit test cannot — either by *discovering* an attacker
+witness in an otherwise-untestable search space, or by *proving* a
+universal property a single concrete test never could.
 
 Each test is written so that **engine success = test FAILURE with a
-concrete attacker witness**. 12 tests, all currently fail (= caught).
+concrete attacker witness**. 16 tests, all currently fail (= caught).
 
 ```bash
 forge test --symbolic
@@ -15,13 +15,10 @@ forge test --symbolic
 
 (requires a forge build with `--symbolic` enabled and `z3` on `$PATH`)
 
-## Why these 12 cases
+## A. Cases where the engine *discovers* the attacker witness
 
-Many DeFi bugs are caught equally well by a hand-written unit test —
-"call this function as a non-owner and assert state unchanged." This
-suite intentionally keeps only the cases where a unit test would *not*
-find the witness, and the symbolic solver does. Each row below names
-the specific input the engine has to discover.
+A unit test would not reliably find these inputs — the bug-triggering
+value sits in a vast search space and the solver has to pick it.
 
 | # | Case | Year | $ lost | Witness the solver must find |
 |---|---|---|---|---|
@@ -38,6 +35,18 @@ the specific input the engine has to discover.
 | 23 | MonoX | 2021 | $31M | `amountIn` that triggers the self-swap math |
 | 33 | Indexed Finance | 2021 | $16M | `delta ≥ weight` underflow |
 
+## B. Cases where the engine *proves a universal property*
+
+A unit test catches these for one concrete input. The symbolic engine
+proves the bug holds across the entire input space — a stronger claim.
+
+| # | Case | Year | $ lost | Universal property |
+|---|---|---|---|---|
+| 05 | Curve / Vyper reentrancy | 2023 | $61M | bug fires for *any* positive deposit |
+| 17 | SushiSwap MISO | 2021 | $3M attempt | double-credit holds across multicall path |
+| 18 | Akutar | 2022 | $34M locked | refund loop blocks for *any* bidder set including a reverter |
+| 30 | The DAO | 2016 | $60M | reentrancy drains for *any* positive deposit |
+
 ## What the engine has to do
 
 | Primitive | Cases |
@@ -48,6 +57,9 @@ the specific input the engine has to discover.
 | Share-price rounding (deposit side) | 06 Hundred · 19 Sonne · 20 Onyx · 21 Polter |
 | Share-price rounding (redeem side) | 14 zkLend |
 | Same-token swap math | 23 MonoX |
+| Reentrancy via attacker callback (universal-property) | 05 Curve · 30 The DAO |
+| `msg.value` semantics across multicall | 17 MISO |
+| Revert-loop griefing | 18 Akutar |
 
 ## Fidelity
 
@@ -62,30 +74,34 @@ How close each reproducer is to the deployed bug.
 | 01 | Nomad | F | `confirmAt[0]=1` reproduced verbatim. |
 | 03 | BEC | F | `cnt*value` in `unchecked` matches Solidity 0.4.x semantics. |
 | 04 | Euler | S | Single contract; real exploit spanned EVC + Risk + price modules. |
+| 05 | Curve / Vyper | L | Used `unchecked` to model the Vyper miscompilation so wrap-around manifests as silent corruption. |
 | 06 | Hundred | S | Bare vault; real Compound-v2 fork has Comptroller, oracle, interest model. |
 | 10 | Velocore | F | `feeMultiplier - 100` underflow is the real shape. |
 | 14 | zkLend | L | Modeled `+1` redeem bumper; real bug was Cairo-side. |
 | 15 | Abracadabra | S | Bare cauldron; real cauldron uses BoringSolidity + BentoBox + oracle. |
+| 17 | MISO | F | `multicall` + payable subcall reuse is the real bug shape. |
+| 18 | Akutar | F | Refund loop with `require(ok)` matches the real contract. |
 | 19 | Sonne | S | Same model as 06 with renamed contract. |
 | 20 | Onyx | S | Same model as 06 with renamed contract. |
 | 21 | Polter | S | Same model as 06 with renamed contract. |
 | 23 | MonoX | L | Simplified arithmetic; real bug involved reserve accounting + price-update ordering. |
+| 30 | The DAO | F | The 2016 reentrancy shape, almost line-for-line. |
 | 33 | Indexed | L | Reduced to one-line `weight[t] -= delta`; real Indexed bug was Balancer-pool reweight math. |
 
-Counts: **3 Faithful · 5 Simplified · 4 Loose** (of 12).
+Counts: **6 Faithful · 5 Simplified · 5 Loose** (of 16).
 
 ## Explicitly excluded
 
-This suite previously included ~23 additional cases (access control,
-init re-callable, delegatecall hijack, reentrancy, multicall, revert-loop,
-storage collision, etc.). Those are real bug classes worth catching, but
-a hand-written unit test catches them equally well — the symbolic engine
-doesn't add discovery power. They were removed to keep the headline
-"the engine finds bugs a unit test cannot" honest.
+The suite previously included ~20 additional cases (most access-control,
+init re-callable, delegatecall hijack, etc.). Those are real bug classes
+worth catching, but a hand-written unit test catches them equally well
+*and* covers the same input space — the symbolic engine adds neither
+discovery nor universal-property value over a unit test. They were
+removed to keep the headline "the engine does something a unit test
+cannot" honest.
 
 The engine's broader capability set (path forking, vm.etch attacker
-modeling, reentrancy semantics, etc.) is regression-tested in the
-upstream PR itself.
+modeling, etc.) is regression-tested in the upstream PR itself.
 
 ## Out of scope
 
