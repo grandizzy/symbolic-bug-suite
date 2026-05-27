@@ -51,11 +51,46 @@ Each case is tagged on how close the reproducer is to what shipped.
 - **Loose** — bug shape adapted to make the engine catch it (compiler
   differences or missing engine primitives).
 
-| Tag | Count | Cases |
-|---|---|---|
-| Faithful | 13 | 01, 02, 03, 07, 10, 11, 13, 17, 18, 24, 26, 27, 30 |
-| Simplified | 15 | 04, 06, 09, 12, 15, 16, 19, 20, 21, 28, 29, 32, 34, 35, 36 |
-| Loose | 8 | 05, 08, 14, 22, 23, 25, 31, 33 |
+| # | Case | Fidelity | Notes |
+|---|---|:---:|---|
+| 01 | Nomad | F | The actual bug shape (`confirmAt[0]=1`) is in the reproducer. |
+| 02 | Parity initWallet | F | Missing init guard reproduced verbatim. |
+| 03 | BEC | F | `cnt*value` in `unchecked` block matches Solidity 0.4.x semantics. |
+| 04 | Euler | S | Single contract; real exploit spanned EVC + Risk + price modules. |
+| 05 | Curve / Vyper | L | Used `unchecked` to model the Vyper miscompilation so wrap-around manifests as silent corruption. |
+| 06 | Hundred | S | Bare vault; real Compound-v2 fork has Comptroller, oracle, interest model. |
+| 07 | LeetSwap | F | The `transferFromUnsafe` function shape is the real bug. |
+| 08 | Hedgey | L | Modeled as missing owner check; real bug involved arbitrary `IERC20` injection. |
+| 09 | Penpie | S | Single master contract; real exploit spanned Penpie + Pendle markets. |
+| 10 | Velocore | F | `feeMultiplier - 100` underflow is the real shape. |
+| 11 | Holograph | F | Missing `onlyOperator` is the real bug. |
+| 12 | Munchables | S | Bare contract; real bug was inside a UUPS proxy chain. |
+| 13 | KiloEx | F | Missing `onlyKeeper` is the real bug. |
+| 14 | zkLend | L | Modeled `+1` redeem bumper; real bug was Cairo-side and uses different math primitives. |
+| 15 | Abracadabra | S | Bare cauldron; real cauldron uses BoringSolidity + BentoBox + oracle. |
+| 16 | Visor | S | Registry mapping reproduced; real Visor had nontrivial proxy + manager layers. |
+| 17 | MISO | F | `multicall` + payable subcall reuse is the real bug shape. |
+| 18 | Akutar | F | Refund loop with `require(ok)` matches the real contract. |
+| 19 | Sonne | S | Same model as 06 with renamed contract. |
+| 20 | Onyx | S | Same model as 06 with renamed contract. |
+| 21 | Polter | S | Same model as 06 with renamed contract. |
+| 22 | Audius | L | Used assembly `sstore(0, …)`; real bug was a Solidity storage layout overlap with the proxy admin slot. |
+| 23 | MonoX | L | Simplified two-line arithmetic; real bug involved reserve accounting + price-update ordering across multiple state variables. |
+| 24 | DODO | F | Missing initializer guard matches real shape. |
+| 25 | Qubit | L | Modeled as `deposit(0, amount)` skipping payment; real bug was `safeTransferFrom` no-op when token was 0x0 inside the bridge router. |
+| 26 | Punk | F | Bare `__init` reproduces the public-initializer bug. |
+| 27 | King of the Ether | F | Royalty `transfer` to a contract that reverts is the real bug. |
+| 28 | PolyNetwork | S | Single dispatch contract; real exploit used a full crafted cross-chain message. |
+| 29 | Fei / Rari | S | Bare cToken; real exploit required Fuse comptroller path. |
+| 30 | The DAO | F | The 2016 reentrancy shape, almost line-for-line. |
+| 31 | Lendf.Me | L | Reordered deposit operations so the engine can surface the hook-reentry; real bug was specific to ERC-777 transfer hook semantics. |
+| 32 | Furucombo | S | Same primitive as 16. |
+| 33 | Indexed | L | Reduced to a one-line `weight[t] -= delta` underflow; real Indexed bug was Balancer-pool reweight math. |
+| 34 | DeltaPrime | S | Same primitive as 02. |
+| 35 | Predy | S | Same primitive as 02 with callback flavor. |
+| 36 | Nexera | S | Same primitive as 16. |
+
+Counts: **13 Faithful · 15 Simplified · 8 Loose** (of 36).
 
 The strongest "would have caught a real bug" claims come from the
 Faithful entries. Simplified entries are credible at the class level
