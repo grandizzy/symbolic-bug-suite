@@ -7,7 +7,7 @@ witness in an otherwise-untestable search space, or by *proving* a
 universal property a single concrete test never could.
 
 Each test is written so that **engine success = test FAILURE with a
-concrete attacker witness**. 16 tests, all currently fail (= caught).
+concrete attacker witness**. 19 tests, all currently fail (= caught).
 
 ```bash
 forge test --symbolic
@@ -17,8 +17,9 @@ forge test --symbolic
 
 ## A. Cases where the engine *discovers* the attacker witness
 
-A unit test would not reliably find these inputs — the bug-triggering
-value sits in a vast search space and the solver has to pick it.
+These tests ask the engine to synthesize a concrete exploit witness. Some
+require needle-in-a-haystack arithmetic values; others exercise stateful or
+reentrant protocol flows over symbolic parameters.
 
 | # | Case | Year | $ lost | Witness the solver must find |
 |---|---|---|---|---|
@@ -34,6 +35,9 @@ value sits in a vast search space and the solver has to pick it.
 | 21 | Polter Finance | 2025 | ~$700K | same primitive as 06, different incident |
 | 23 | MonoX | 2021 | $31M | `amountIn` that triggers the self-swap math |
 | 33 | Indexed Finance | 2021 | $16M | `delta ≥ weight` underflow |
+| 34 | DEI / Deus DAO | 2023 | $6.5M | positive attacker approval that is rewritten as victim allowance |
+| 35 | DFX Finance | 2022 | $7.5M | any positive in-liquidity flash amount that mints withdrawable LP |
+| 36 | Fei/Rari Fuse | 2022 | $80M | valid collateralized borrow amount that opens the reentrant exit window |
 
 ## B. Cases where the engine *proves a universal property*
 
@@ -58,6 +62,9 @@ proves the bug holds across the entire input space — a stronger claim.
 | Share-price rounding (redeem side) | 14 zkLend |
 | Same-token swap math | 23 MonoX |
 | Reentrancy via attacker callback (universal-property) | 05 Curve · 30 The DAO |
+| Allowance owner/spender reversal | 34 DEI |
+| Side-entrance flash-loan accounting | 35 DFX |
+| Borrow reentrancy before debt accounting | 36 Fei/Rari Fuse |
 | `msg.value` semantics across multicall | 17 MISO |
 | Revert-loop griefing | 18 Akutar |
 
@@ -87,8 +94,11 @@ How close each reproducer is to the deployed bug.
 | 23 | MonoX | L | Simplified arithmetic; real bug involved reserve accounting + price-update ordering. |
 | 30 | The DAO | F | The 2016 reentrancy shape, almost line-for-line. |
 | 33 | Indexed | L | Reduced to one-line `weight[t] -= delta`; real Indexed bug was Balancer-pool reweight math. |
+| 34 | DEI / Deus DAO | S | ERC20 allowance and `burnFrom` flow retained; governance/lossless-token scaffolding omitted. |
+| 35 | DFX Finance | S | Keeps flash callback, repayment-by-balance check, LP mint, and post-flash withdrawal; omits multi-asset curve math. |
+| 36 | Fei/Rari Fuse | S | Keeps collateral entry, borrow-before-accounting, reentrant market exit, and collateral redemption; omits full Comptroller/cToken stack. |
 
-Counts: **6 Faithful · 5 Simplified · 5 Loose** (of 16).
+Counts: **6 Faithful · 9 Simplified · 4 Loose** (of 19).
 
 ## Explicitly excluded
 
@@ -123,7 +133,7 @@ surface `Unsupported(...)` rather than pass silently.
 - Bugs and invariants were authored *with knowledge of the historical
   exploit*. A real auditor or fuzzer would not have that prior. The
   suite proves *capability*, not *discovery power*.
-- Models are minimal (~25–50 LOC). Whether the engine scales to
+- Models are minimal (~25–60 LOC). Whether the engine scales to
   thousand-LOC contracts with the same bug class is a separate question.
 - Several tests required input bounding to keep the SMT problem
   tractable (Euler, Hundred, zkLend). The bug exists at any scale; the
