@@ -7,7 +7,7 @@ witness in an otherwise-untestable search space, or by *proving* a
 universal property a single concrete test never could.
 
 Each test is written so that **engine success = test FAILURE with a
-concrete attacker witness**. 19 tests, all currently fail (= caught).
+concrete attacker witness**. 22 tests, all currently fail (= caught).
 
 ```bash
 forge test --symbolic
@@ -38,6 +38,9 @@ reentrant protocol flows over symbolic parameters.
 | 34 | DEI / Deus DAO | 2023 | $6.5M | positive attacker approval that is rewritten as victim allowance |
 | 35 | DFX Finance | 2022 | $7.5M | any positive in-liquidity flash amount that mints withdrawable LP |
 | 36 | Fei/Rari Fuse | 2022 | $80M | valid collateralized borrow amount that opens the reentrant exit window |
+| 37 | Uranium Finance | 2021 | $50M | branch selecting the drain-sized output accepted by the typo'd invariant |
+| 38 | Platypus Finance | 2023 | $8.5M | solvent borrow amount that survives collateral emergency-withdrawal |
+| 39 | Cover Protocol Blacksmith | 2020 | $4M+ | stake amount that claims rewards accrued before the stake existed |
 
 ## B. Cases where the engine *proves a universal property*
 
@@ -65,6 +68,9 @@ proves the bug holds across the entire input space — a stronger claim.
 | Allowance owner/spender reversal | 34 DEI |
 | Side-entrance flash-loan accounting | 35 DFX |
 | Borrow reentrancy before debt accounting | 36 Fei/Rari Fuse |
+| AMM invariant typo | 37 Uranium |
+| Post-withdraw solvency accounting | 38 Platypus |
+| Stale reward-index accounting | 39 Cover |
 | `msg.value` semantics across multicall | 17 MISO |
 | Revert-loop griefing | 18 Akutar |
 
@@ -97,8 +103,11 @@ How close each reproducer is to the deployed bug.
 | 34 | DEI / Deus DAO | S | ERC20 allowance and `burnFrom` flow retained; governance/lossless-token scaffolding omitted. |
 | 35 | DFX Finance | S | Keeps flash callback, repayment-by-balance check, LP mint, and post-flash withdrawal; omits multi-asset curve math. |
 | 36 | Fei/Rari Fuse | S | Keeps collateral entry, borrow-before-accounting, reentrant market exit, and collateral redemption; omits full Comptroller/cToken stack. |
+| 37 | Uranium Finance | S | Keeps the shipped `10000` fee adjustment vs `1000 ** 2` invariant typo; harness uses a finite branch because the fully symbolic nonlinear guard currently times out. |
+| 38 | Platypus Finance | S | Keeps pre-withdraw solvency check, collateral/debt relation, and collateral removal; omits LP token and pool integrations. |
+| 39 | Cover Protocol | S | Keeps memory-copied pool state, storage update, stale writeoff, and reward minting; omits LP/reward token plumbing. |
 
-Counts: **6 Faithful · 9 Simplified · 4 Loose** (of 19).
+Counts: **6 Faithful · 12 Simplified · 4 Loose** (of 22).
 
 ## Explicitly excluded
 
@@ -133,7 +142,7 @@ surface `Unsupported(...)` rather than pass silently.
 - Bugs and invariants were authored *with knowledge of the historical
   exploit*. A real auditor or fuzzer would not have that prior. The
   suite proves *capability*, not *discovery power*.
-- Models are minimal (~25–60 LOC). Whether the engine scales to
+- Models are minimal (~25–75 LOC). Whether the engine scales to
   thousand-LOC contracts with the same bug class is a separate question.
 - Several tests required input bounding to keep the SMT problem
   tractable (Euler, Hundred, zkLend). The bug exists at any scale; the
@@ -147,4 +156,4 @@ test/  one .t.sol per case with the symbolic invariant
 ```
 
 Tests inherit from `forge-std/Test.sol`. Solver times range from
-~100ms (Nomad) to ~50s (Hundred, zkLend) on a typical laptop with Z3.
+~20ms (Uranium) to ~80s (MonoX) on a typical laptop with Z3.
